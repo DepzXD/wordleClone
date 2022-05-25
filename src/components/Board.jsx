@@ -1,6 +1,6 @@
 import React, { useContext } from 'react'
 import styled from 'styled-components'
-import { BoardState } from '../context/gameContext'
+import { BoardState, BoardUIContext } from '../context/gameContext'
 
 const RowStyle = styled.div`
   display: flex;
@@ -16,6 +16,11 @@ const LetterStyle = styled.div`
   max-height: 4.5rem;
   align-items: center;
   justify-content: center;
+  background-color: ${(props) => props.isEmpty && 'back'};
+  background-color: ${(props) => props.isInCorrect && props.theme.darkGray};
+  background-color: ${(props) =>
+    props.isPartallyCorrect && props.theme.partiallyCorrect};
+  background-color: ${(props) => props.isCorrect && props.theme.correct};
 `
 
 const BoardStyle = styled.div`
@@ -23,15 +28,40 @@ const BoardStyle = styled.div`
   max-width: 25rem;
 `
 
-const Letter = ({ letter }) => {
-  return <LetterStyle>{letter}</LetterStyle>
+const Letter = ({ letter, state }) => {
+  let empty = false
+  let isCorrect = false
+  let isPartallyCorrect = false
+  let isInCorrect = false
+  if (state == 'Empty') {
+    empty = true
+  }
+  if (state == 'Yes') {
+    isCorrect = true
+  }
+  if (state == 'No') {
+    isInCorrect = true
+  }
+  if (state == 'InWord') {
+    isPartallyCorrect = true
+  }
+  return (
+    <LetterStyle
+      isEmpty={empty}
+      isCorrect={isCorrect}
+      isPartallyCorrect={isPartallyCorrect}
+      isInCorrect={isInCorrect}
+    >
+      {letter}
+    </LetterStyle>
+  )
 }
 
-const Row = ({ rowVals }) => {
+const Row = ({ rowVals, state }) => {
   return (
     <RowStyle>
       {rowVals.map((item, idx) => (
-        <Letter key={idx} letter={item} />
+        <Letter key={idx} state={state[idx]} letter={item} />
       ))}
     </RowStyle>
   )
@@ -39,10 +69,11 @@ const Row = ({ rowVals }) => {
 
 const Board = () => {
   const [boardState, setBoardState] = useContext(BoardState)
+  const [boardUiState, setBoardUiState] = useContext(BoardUIContext)
   return (
     <BoardStyle>
       {boardState.map((rowVals, idx) => (
-        <Row key={idx} rowVals={rowVals} />
+        <Row key={idx} state={boardUiState[idx]} rowVals={rowVals} />
       ))}
     </BoardStyle>
   )

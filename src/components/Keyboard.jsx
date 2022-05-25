@@ -1,6 +1,13 @@
-import React, { useContext, useCallback } from 'react'
+import React, { useContext, useCallback, useEffect } from 'react'
 import styled from 'styled-components'
-import { BoardState, GameState } from '../context/gameContext'
+import {
+  BoardState,
+  BoardUIContext,
+  GameState,
+  WordList,
+} from '../context/gameContext'
+import { updateKeys, handleSpecialKeys } from '../utils/configBoard'
+import { checkGameState } from '../utils/gameUtils'
 
 const row1 = ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P']
 const row2 = ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L']
@@ -30,32 +37,56 @@ const RowStyle = styled.div`
   font-size: 0.8em;
 `
 
-const updateKeys = (key, board, row, column) => {
-  return board
-}
-
-const handleSpecialKeys = (key, board, row, column) => {
-  if (key === 'Enter') {
-    return board
-  }
-  if (key === 'Back') {
-    return board
-  }
-}
-
 const Button = ({ val }) => {
   const [boardState, setBoardState] = useContext(BoardState)
   const [gameState, setGameState] = useContext(GameState)
+  const [boardUiState, setBoardUiState] = useContext(BoardUIContext)
+  const [wordList, _] = useContext(WordList)
+
   const updateBoard = useCallback((key) => {
-    // console.log(gameState)
-    // let board = [...boardState]
-    // let game = { ...gameState }
-    // console.log(board)
-    // board[gameState.currentRow][gameState.currentColumn] = key
-    // game.currentColumn += 1
-    // setBoardState(board)
-    // console.log(boardState, gameState)
-    // setGameState(game)
+    let result = false
+    if (key == 'Enter' || key == 'Backspace') {
+      result = handleSpecialKeys(
+        key,
+        boardState,
+        gameState.currentRow,
+        gameState.currentColumn,
+        wordList
+      )
+      if (result) {
+        const [board, word, row, column] = result
+        setBoardState(board)
+        let game = { ...gameState }
+        game.currentColumn = column
+        game.currentRow = row
+        if (word) {
+          const res = checkGameState(word, game.wordToGuess, wordList)
+          let uiState = [...boardUiState]
+          uiState[game.currentRow - 1] = res.guessedLetter
+          setBoardUiState(uiState)
+          if (res.isWin) {
+            alert('You Winned')
+            // Restart Game
+          }
+        }
+        setGameState(game)
+      }
+    } else {
+      result = updateKeys(
+        key,
+        boardState,
+        gameState.currentRow,
+        gameState.currentColumn
+      )
+      if (result) {
+        const [board, row, column] = result
+        setBoardState(board)
+        let game = { ...gameState }
+        game.currentColumn = column
+        game.currentRow = row
+        setGameState(game)
+      }
+    }
   })
   return <ButtonStyle onClick={() => updateBoard(val)}>{val}</ButtonStyle>
 }
@@ -65,6 +96,68 @@ const Container = styled.div`
 `
 
 const Keyboard = () => {
+  const [boardState, setBoardState] = useContext(BoardState)
+  const [gameState, setGameState] = useContext(GameState)
+  const [boardUiState, setBoardUiState] = useContext(BoardUIContext)
+  const [wordList, _] = useContext(WordList)
+
+  const handeleKeyPress = useCallback(({ key }) => {
+    // console.log(gameState.wordToGuess)
+    // if (key == 'Enter' || key == 'BackSpace') {
+    //   let res = handleSpecialKeys(
+    //     key,
+    //     boardState,
+    //     gameState.currentRow,
+    //     gameState.currentColumn,
+    //     wordList
+    //   )
+    //   if (res) {
+    //     const [board, word, row, column] = result
+    //     setBoardState(board)
+    //     let game = { ...gameState }
+    //     game.currentColumn = column
+    //     game.currentRow = row
+    //     if (word) {
+    //       const res = checkGameState(word, gameState.wordToGuess, wordList)
+    //       let uiState = [...boardUiState]
+    //       uiState[game.currentRow - 1] = res.guessedLetter
+    //       setBoardUiState(uiState)
+    //       if (res.isWin) {
+    //         alert('You Winned')
+    //         // Restart Game
+    //       }
+    //     }
+    //     setGameState(game)
+    //   }
+    // } else {
+    //   let keys = [...row1, ...row2, ...row3]
+    //   keys.forEach((letter) => {
+    //     if (letter == key.toUpperCase()) {
+    //       let result = updateKeys(
+    //         key.toUpperCase(),
+    //         boardState,
+    //         gameState.currentRow,
+    //         gameState.currentColumn
+    //       )
+    //       if (result) {
+    //         const [board, row, column] = result
+    //         setBoardState(board)
+    //         let game = { ...gameState }
+    //         game.currentColumn = column
+    //         game.currentRow = row
+    //         setGameState(game)
+    //       }
+    //     }
+    //     return
+    //   })
+    // }
+  })
+  useEffect(() => {
+    document.addEventListener('keyup', (e) => handeleKeyPress(e))
+    return () => {
+      document.removeEventListener('keyup', (e) => handeleKeyPress(e))
+    }
+  }, [handeleKeyPress])
   return (
     <Container>
       <RowStyle>
@@ -82,7 +175,7 @@ const Keyboard = () => {
         {row3.map((val) => (
           <Button key={val} val={val} />
         ))}
-        <Button key={'Back'} val={'Back'} />
+        <Button key={'Backspace'} val={'Backspace'} />
       </RowStyle>
     </Container>
   )
