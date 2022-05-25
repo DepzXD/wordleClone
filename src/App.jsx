@@ -1,6 +1,16 @@
+import React from 'react'
+import { ThemeProvider } from 'styled-components'
+import { GlobalStyle, Theme } from './components/styles/GlobalStyles'
+import Header from './components/Header'
+import Game from './components/Game'
+
 const App = () => {
   return (
-    <h1>Hello World!</h1>
+    <ThemeProvider theme={Theme}>
+      <GlobalStyle />
+      <Header />
+      <Game />
+    </ThemeProvider>
   )
 }
 
